@@ -91,38 +91,44 @@ factory_manager& factory_manager::get_instance() {
 
 
 
-const car_factory* factory_manager::find(level l_version) const {
-	lock_guard<mutex> lock(revise_mutex);
-	auto it = factories.find(l_version);
+const car_factory* factory_manager::find(std::string_view l_version) const {
+	unique_lock<mutex> lock(revise_mutex, try_to_lock);
+	
+
+	auto it = factories.find(std::string(l_version));
 	return it != factories.end() ? (*it).second : nullptr;
 }
 
 
-bool factory_manager::add_new_car_level(level l_version, car_factory* c_version) {
+bool factory_manager::add_new_car_level(std::string_view l_version, car_factory* c_version) {
 	lock_guard<mutex> lock(revise_mutex);
+
 
 	if (c_version == nullptr)
 		return false;
-
+	
 	if (find(l_version) != nullptr)
 		return false;
 
 
 	factories.insert(std::make_pair(l_version, c_version));
 	
-	return true;
+	return true;	
 }
 
 
-std::unique_ptr<car> factory_manager::add_new_car(level l_version) const {
+std::unique_ptr<car> factory_manager::add_new_car(std::string_view l_version) const {
 	lock_guard<mutex> lock(revise_mutex);
 
+	//获得second
 	auto it = find(l_version);
 
 
 	if (it == nullptr)
 		return nullptr;
-
+	
+	//返回创建的汽车
+	//使用unique_ptr<car>接收数据
 	return it->create_car();
 }
 
